@@ -1,14 +1,14 @@
 <?php
 require_once '../config/config.php';
-
-// Check if user is admin
 requireAdmin();
 
+// ... (Your PHP logic at the top remains the same, it's already good) ...
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
     if ($action === 'add' || $action === 'edit') {
+        // (This block is fine, no changes needed)
         $id = $action === 'edit' ? (int)$_POST['id'] : 0;
         $categorie_id = (int)$_POST['categorie_id'];
         $nom = sanitizeInput($_POST['nom']);
@@ -34,9 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if ($stmt->execute([$categorie_id, $nom, $nom_ar, $description, $description_ar, $prix, $prix_promo, 
                               $stock, $pieces_count, $age_min, $age_max, $reference, $statut, $featured])) {
-                showSuccess('Produit ajouté avec succès !');
+                setFlashMessage('Produit ajouté avec succès !', 'success');
             } else {
-                showError('Erreur lors de l\'ajout du produit');
+                setFlashMessage('Erreur lors de l\'ajout du produit', 'danger');
             }
         } else {
             $stmt = $pdo->prepare("
@@ -48,19 +48,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if ($stmt->execute([$categorie_id, $nom, $nom_ar, $description, $description_ar, $prix, $prix_promo, 
                               $stock, $pieces_count, $age_min, $age_max, $reference, $statut, $featured, $id])) {
-                showSuccess('Produit modifié avec succès !');
+                setFlashMessage('Produit modifié avec succès !', 'success');
             } else {
-                showError('Erreur lors de la modification du produit');
+                setFlashMessage('Erreur lors de la modification du produit', 'danger');
             }
         }
+        header('Location: products.php'); // Redirect to avoid form resubmission
+        exit();
     } elseif ($action === 'delete') {
         $id = (int)$_POST['id'];
         $stmt = $pdo->prepare("DELETE FROM produits WHERE id = ?");
         if ($stmt->execute([$id])) {
-            showSuccess('Produit supprimé avec succès !');
+            setFlashMessage('Produit supprimé avec succès !', 'success');
         } else {
-            showError('Erreur lors de la suppression du produit');
+            setFlashMessage('Erreur lors de la suppression du produit', 'danger');
         }
+        header('Location: products.php'); // Redirect
+        exit();
     }
 }
 
@@ -117,7 +121,7 @@ $page_title = 'Gestion des Produits';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title; ?> - <?php echo SITE_NAME; ?></title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/admin.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -125,13 +129,13 @@ $page_title = 'Gestion des Produits';
     <header class="header">
         <div class="container">
             <div class="header-content">
-                <a href="<?php echo SITE_URL; ?>" class="logo">
+                <a href="<?php echo SITE_URL; ?>/admin" class="logo">
                     <div class="logo-icon">M</div>
                     Menalego - Admin
                 </a>
                 
                 <div class="user-actions">
-                    <a href="<?php echo SITE_URL; ?>" class="user-btn">Voir le site</a>
+                    <a href="<?php echo SITE_URL; ?>" class="user-btn" target="_blank">Voir le site</a>
                     <a href="../auth/logout.php" class="user-btn">Déconnexion</a>
                 </div>
             </div>
@@ -155,46 +159,15 @@ $page_title = 'Gestion des Produits';
     <!-- Products Management -->
     <section class="products-section">
         <div class="container">
-            <div class="section-header">
+            <div class="page-header">
                 <h1>Gestion des Produits</h1>
-                <button onclick="showAddForm()" class="btn-primary">Ajouter un produit</button>
+                <button id="showFormBtn" class="btn-primary">Ajouter un produit</button>
             </div>
             
-            <!-- Flash Messages -->
             <?php echo getFlashMessage(); ?>
             
-            <!-- Search and Filters -->
-            <div class="filters">
-                <form method="GET" action="products.php">
-                    <div class="filters-grid">
-                        <div class="filter-group">
-                            <label for="search">Recherche</label>
-                            <input type="text" id="search" name="search" placeholder="Nom ou référence..." 
-                                   value="<?php echo htmlspecialchars($search); ?>" class="form-control">
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label for="category">Catégorie</label>
-                            <select id="category" name="category" class="form-control">
-                                <option value="">Toutes les catégories</option>
-                                <?php foreach ($categories as $category): ?>
-                                    <option value="<?php echo $category['id']; ?>" 
-                                            <?php echo $category_filter == $category['id'] ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($category['nom']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <div class="filter-group" style="align-self: end;">
-                            <button type="submit" class="btn-primary">Filtrer</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            
-            <!-- Add/Edit Form -->
-            <div id="productForm" class="admin-dashboard" style="display: <?php echo $edit_product || isset($_GET['action']) && $_GET['action'] === 'add' ? 'block' : 'none'; ?>;">
+            <!-- Add/Edit Form Panel -->
+            <div id="productForm" class="admin-dashboard <?php echo !$edit_product && !(isset($_GET['action']) && $_GET['action'] === 'add') ? 'hidden' : ''; ?>">
                 <h3><?php echo $edit_product ? 'Modifier le produit' : 'Ajouter un produit'; ?></h3>
                 
                 <form method="POST">
@@ -203,38 +176,35 @@ $page_title = 'Gestion des Produits';
                         <input type="hidden" name="id" value="<?php echo $edit_product['id']; ?>">
                     <?php endif; ?>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-grid cols-2">
                         <div class="form-group">
                             <label for="nom">Nom (Français) *</label>
-                            <input type="text" id="nom" name="nom" class="form-control" required 
-                                   value="<?php echo $edit_product ? htmlspecialchars($edit_product['nom']) : ''; ?>">
+                            <input type="text" id="nom" name="nom" class="form-control" required value="<?php echo htmlspecialchars($edit_product['nom'] ?? ''); ?>">
                         </div>
                         
                         <div class="form-group">
                             <label for="nom_ar">Nom (Arabe)</label>
-                            <input type="text" id="nom_ar" name="nom_ar" class="form-control" 
-                                   value="<?php echo $edit_product ? htmlspecialchars($edit_product['nom_ar']) : ''; ?>">
+                            <input type="text" id="nom_ar" name="nom_ar" class="form-control" value="<?php echo htmlspecialchars($edit_product['nom_ar'] ?? ''); ?>">
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label for="description">Description (Français) *</label>
-                        <textarea id="description" name="description" class="form-control" rows="3" required><?php echo $edit_product ? htmlspecialchars($edit_product['description']) : ''; ?></textarea>
+                        <textarea id="description" name="description" class="form-control" rows="3" required><?php echo htmlspecialchars($edit_product['description'] ?? ''); ?></textarea>
                     </div>
                     
                     <div class="form-group">
                         <label for="description_ar">Description (Arabe)</label>
-                        <textarea id="description_ar" name="description_ar" class="form-control" rows="3"><?php echo $edit_product ? htmlspecialchars($edit_product['description_ar']) : ''; ?></textarea>
+                        <textarea id="description_ar" name="description_ar" class="form-control" rows="3"><?php echo htmlspecialchars($edit_product['description_ar'] ?? ''); ?></textarea>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
+                    <div class="form-grid cols-4">
                         <div class="form-group">
                             <label for="categorie_id">Catégorie *</label>
                             <select id="categorie_id" name="categorie_id" class="form-control" required>
                                 <option value="">Choisir une catégorie</option>
                                 <?php foreach ($categories as $category): ?>
-                                    <option value="<?php echo $category['id']; ?>" 
-                                            <?php echo $edit_product && $edit_product['categorie_id'] == $category['id'] ? 'selected' : ''; ?>>
+                                    <option value="<?php echo $category['id']; ?>" <?php echo isset($edit_product) && $edit_product['categorie_id'] == $category['id'] ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($category['nom']); ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -243,137 +213,149 @@ $page_title = 'Gestion des Produits';
                         
                         <div class="form-group">
                             <label for="prix">Prix (MAD) *</label>
-                            <input type="number" id="prix" name="prix" class="form-control" step="0.01" min="0" required 
-                                   value="<?php echo $edit_product ? $edit_product['prix'] : ''; ?>">
+                            <input type="number" id="prix" name="prix" class="form-control" step="0.01" min="0" required value="<?php echo $edit_product['prix'] ?? ''; ?>">
                         </div>
                         
                         <div class="form-group">
                             <label for="prix_promo">Prix promo (MAD)</label>
-                            <input type="number" id="prix_promo" name="prix_promo" class="form-control" step="0.01" min="0" 
-                                   value="<?php echo $edit_product ? $edit_product['prix_promo'] : ''; ?>">
+                            <input type="number" id="prix_promo" name="prix_promo" class="form-control" step="0.01" min="0" value="<?php echo $edit_product['prix_promo'] ?? ''; ?>">
                         </div>
                         
                         <div class="form-group">
                             <label for="stock">Stock *</label>
-                            <input type="number" id="stock" name="stock" class="form-control" min="0" required 
-                                   value="<?php echo $edit_product ? $edit_product['stock'] : ''; ?>">
+                            <input type="number" id="stock" name="stock" class="form-control" min="0" required value="<?php echo $edit_product['stock'] ?? ''; ?>">
                         </div>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
+                    <div class="form-grid cols-4">
                         <div class="form-group">
-                            <label for="pieces_count">Nombre de pièces *</label>
-                            <input type="number" id="pieces_count" name="pieces_count" class="form-control" min="1" required 
-                                   value="<?php echo $edit_product ? $edit_product['pieces_count'] : ''; ?>">
+                            <label for="pieces_count">Nb de pièces *</label>
+                            <input type="number" id="pieces_count" name="pieces_count" class="form-control" min="1" required value="<?php echo $edit_product['pieces_count'] ?? ''; ?>">
                         </div>
                         
                         <div class="form-group">
-                            <label for="age_min">Âge minimum *</label>
-                            <input type="number" id="age_min" name="age_min" class="form-control" min="3" max="18" required 
-                                   value="<?php echo $edit_product ? $edit_product['age_min'] : '3'; ?>">
+                            <label for="age_min">Âge min *</label>
+                            <input type="number" id="age_min" name="age_min" class="form-control" min="3" max="18" required value="<?php echo $edit_product['age_min'] ?? '3'; ?>">
                         </div>
                         
                         <div class="form-group">
-                            <label for="age_max">Âge maximum *</label>
-                            <input type="number" id="age_max" name="age_max" class="form-control" min="3" max="99" required 
-                                   value="<?php echo $edit_product ? $edit_product['age_max'] : '99'; ?>">
+                            <label for="age_max">Âge max *</label>
+                            <input type="number" id="age_max" name="age_max" class="form-control" min="3" max="99" required value="<?php echo $edit_product['age_max'] ?? '99'; ?>">
                         </div>
                         
                         <div class="form-group">
                             <label for="reference">Référence *</label>
-                            <input type="text" id="reference" name="reference" class="form-control" required 
-                                   value="<?php echo $edit_product ? htmlspecialchars($edit_product['reference']) : ''; ?>">
+                            <input type="text" id="reference" name="reference" class="form-control" required value="<?php echo htmlspecialchars($edit_product['reference'] ?? ''); ?>">
                         </div>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
+                    <div class="form-grid cols-2">
+                         <div class="form-group">
                             <label for="statut">Statut *</label>
                             <select id="statut" name="statut" class="form-control" required>
-                                <option value="brouillon" <?php echo $edit_product && $edit_product['statut'] == 'brouillon' ? 'selected' : ''; ?>>Brouillon</option>
-                                <option value="actif" <?php echo $edit_product && $edit_product['statut'] == 'actif' ? 'selected' : ''; ?>>Actif</option>
-                                <option value="inactif" <?php echo $edit_product && $edit_product['statut'] == 'inactif' ? 'selected' : ''; ?>>Inactif</option>
-                                <option value="rupture" <?php echo $edit_product && $edit_product['statut'] == 'rupture' ? 'selected' : ''; ?>>Rupture de stock</option>
+                                <option value="brouillon" <?php echo isset($edit_product) && $edit_product['statut'] == 'brouillon' ? 'selected' : ''; ?>>Brouillon</option>
+                                <option value="actif" <?php echo isset($edit_product) && $edit_product['statut'] == 'actif' ? 'selected' : ''; ?>>Actif</option>
+                                <option value="inactif" <?php echo isset($edit_product) && $edit_product['statut'] == 'inactif' ? 'selected' : ''; ?>>Inactif</option>
+                                <option value="rupture" <?php echo isset($edit_product) && $edit_product['statut'] == 'rupture' ? 'selected' : ''; ?>>Rupture de stock</option>
                             </select>
                         </div>
                         
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" name="featured" value="1" 
-                                       <?php echo $edit_product && $edit_product['featured'] ? 'checked' : ''; ?>>
-                                Produit en vedette
+                        <div class="form-group toggle-switch-group">
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="featured" value="1" <?php echo isset($edit_product) && $edit_product['featured'] ? 'checked' : ''; ?>>
+                                <span class="toggle-slider"></span>
                             </label>
+                            <span>Produit en vedette</span>
                         </div>
                     </div>
                     
-                    <div style="display: flex; gap: 1rem;">
-                        <button type="submit" class="btn-primary">
-                            <?php echo $edit_product ? 'Modifier' : 'Ajouter'; ?>
-                        </button>
-                        <button type="button" onclick="hideForm()" class="btn-secondary">Annuler</button>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary"><?php echo $edit_product ? 'Enregistrer les modifications' : 'Ajouter le produit'; ?></button>
+                        <button type="button" id="hideFormBtn" class="btn-secondary">Annuler</button>
                     </div>
                 </form>
             </div>
-            
-            <!-- Products Table -->
+
+            <!-- Products Table Panel -->
             <div class="admin-dashboard">
-                <h3>Liste des produits (<?php echo count($products); ?>)</h3>
+                <div class="page-header">
+                    <h3>Liste des produits (<?php echo count($products); ?>)</h3>
+                    <!-- Search and Filters -->
+                    <div class="filters-panel" style="padding:0; border:none; margin:0;">
+                        <form method="GET" action="products.php">
+                            <div class="filters-grid">
+                                <div class="form-group">
+                                    <input type="text" id="search" name="search" placeholder="Nom ou référence..." value="<?php echo htmlspecialchars($search); ?>" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <select id="category" name="category" class="form-control">
+                                        <option value="">Toutes les catégories</option>
+                                        <?php foreach ($categories as $category): ?>
+                                            <option value="<?php echo $category['id']; ?>" <?php echo $category_filter == $category['id'] ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($category['nom']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">Filtrer</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
                 
                 <?php if (empty($products)): ?>
-                    <p>Aucun produit trouvé.</p>
+                    <p class="empty-state-message">Aucun produit trouvé pour les filtres actuels.</p>
                 <?php else: ?>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nom</th>
-                                <th>Catégorie</th>
-                                <th>Prix</th>
-                                <th>Stock</th>
-                                <th>Statut</th>
-                                <th>Vedette</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($products as $product): ?>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
                                 <tr>
-                                    <td><?php echo $product['id']; ?></td>
-                                    <td>
-                                        <strong><?php echo htmlspecialchars($product['nom']); ?></strong><br>
-                                        <small><?php echo htmlspecialchars($product['reference']); ?></small>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($product['categorie_nom']); ?></td>
-                                    <td><?php echo formatPrice($product['prix']); ?></td>
-                                    <td>
-                                        <span style="color: <?php echo $product['stock'] < 5 ? 'red' : ($product['stock'] < 10 ? 'orange' : 'green'); ?>;">
-                                            <?php echo $product['stock']; ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; color: white;
-                                              background: <?php 
-                                                  echo $product['statut'] == 'actif' ? '#28a745' : 
-                                                      ($product['statut'] == 'inactif' ? '#6c757d' : 
-                                                      ($product['statut'] == 'rupture' ? '#dc3545' : '#ffc107')); 
-                                              ?>;">
-                                            <?php echo ucfirst($product['statut']); ?>
-                                        </span>
-                                    </td>
-                                    <td><?php echo $product['featured'] ? '⭐' : ''; ?></td>
-                                    <td>
-                                        <a href="products.php?edit=<?php echo $product['id']; ?>" class="btn-secondary" style="margin-right: 0.5rem;">Modifier</a>
-                                        <form method="POST" style="display: inline;" 
-                                              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce produit ?');">
-                                            <input type="hidden" name="action" value="delete">
-                                            <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
-                                            <button type="submit" class="btn-primary" style="background: var(--primary-red);">Supprimer</button>
-                                        </form>
-                                    </td>
+                                    <th>ID</th>
+                                    <th>Nom / Réf.</th>
+                                    <th>Catégorie</th>
+                                    <th>Prix</th>
+                                    <th>Stock</th>
+                                    <th>Statut</th>
+                                    <th>Vedette</th>
+                                    <th>Actions</th>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($products as $product): ?>
+                                    <tr>
+                                        <td><?php echo $product['id']; ?></td>
+                                        <td>
+                                            <strong><?php echo htmlspecialchars($product['nom']); ?></strong><br>
+                                            <small class="text-muted"><?php echo htmlspecialchars($product['reference']); ?></small>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($product['categorie_nom']); ?></td>
+                                        <td><?php echo formatPrice($product['prix']); ?></td>
+                                        <td>
+                                            <span class="stock-level <?php echo $product['stock'] < 5 ? 'out-of-stock' : ($product['stock'] < 10 ? 'low' : ''); ?>">
+                                                <?php echo $product['stock']; ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge status-<?php echo $product['statut']; ?>">
+                                                <?php echo ucfirst($product['statut']); ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo $product['featured'] ? '⭐' : '—'; ?></td>
+                                        <td class="actions-cell">
+                                            <a href="products.php?edit=<?php echo $product['id']; ?>#productForm" class="btn-secondary">Modifier</a>
+                                            <form method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce produit ?');">
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
+                                                <button type="submit" class="btn-danger">Supprimer</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
@@ -383,20 +365,39 @@ $page_title = 'Gestion des Produits';
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                <p>&copy; <?php echo date('Y'); ?> Menalego - Interface d'administration</p>
+                <p>© <?php echo date('Y'); ?> Menalego - Interface d'administration</p>
             </div>
         </div>
     </footer>
 
     <script>
-        function showAddForm() {
-            document.getElementById('productForm').style.display = 'block';
-            document.getElementById('productForm').scrollIntoView({behavior: 'smooth'});
-        }
-        
-        function hideForm() {
-            document.getElementById('productForm').style.display = 'none';
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const productForm = document.getElementById('productForm');
+            const showFormBtn = document.getElementById('showFormBtn');
+            const hideFormBtn = document.getElementById('hideFormBtn');
+
+            // Function to toggle form visibility
+            function toggleForm(show) {
+                if (show) {
+                    productForm.classList.remove('hidden');
+                    productForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    showFormBtn.classList.add('hidden');
+                } else {
+                    productForm.classList.add('hidden');
+                    showFormBtn.classList.remove('hidden');
+                    // Optional: clear form or reset URL
+                    // window.history.pushState({}, '', 'products.php');
+                }
+            }
+
+            // Event Listeners
+            if (showFormBtn) {
+                showFormBtn.addEventListener('click', () => toggleForm(true));
+            }
+            if (hideFormBtn) {
+                hideFormBtn.addEventListener('click', () => toggleForm(false));
+            }
+        });
     </script>
 </body>
 </html>

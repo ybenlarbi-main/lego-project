@@ -6,7 +6,9 @@ if (session_status() == PHP_SESSION_NONE) {
 
 // Database configuration
 require_once __DIR__ . '/database.php';
-
+// --- ADD THIS LINE ---
+// require_once __DIR__ . '/../includes/functions.php';
+// --------------------
 // Site configuration
 define('SITE_NAME', 'Menalego');
 define('SITE_URL', 'http://localhost/new-mohamed/menalego');
