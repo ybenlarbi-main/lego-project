@@ -7,7 +7,6 @@ if (session_status() == PHP_SESSION_NONE) {
 // Database configuration
 require_once __DIR__ . '/database.php';
 // --- ADD THIS LINE ---
-// require_once __DIR__ . '/../includes/functions.php';
 // --------------------
 // Site configuration
 define('SITE_NAME', 'Menalego');
@@ -16,6 +15,7 @@ define('ADMIN_EMAIL', 'admin@menalego.ma');
 define('BASE_PATH', dirname(__DIR__));
 define('UPLOAD_PATH', BASE_PATH . '/assets/uploads/');
 define('UPLOAD_URL', SITE_URL . '/assets/uploads/');
+// require_once __DIR__ . '/../includes/functions.php';
 
 // Language settings
 $available_languages = ['fr' => 'Français', 'ar' => 'العربية'];

@@ -1,10 +1,7 @@
 <?php
 // menalego/includes/functions.php
 
-// Start the session if it's not already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// The session is already started by config.php, so no need to start it here again.
 
 /**
  * Sets a flash message to be displayed on the next page load.
@@ -24,33 +21,45 @@ function setFlashMessage($message, $type = 'info') {
  */
 function getFlashMessage() {
     if (isset($_SESSION['flash_message'])) {
-        $message = $_SESSION['flash_message']['message'];
-        $type = $_SESSION['flash_message']['type'];
+        $message_data = $_SESSION['flash_message'];
+        unset($_SESSION['flash_message']); // Clear immediately
         
-        // Clear the message from the session so it doesn't show again
-        unset($_SESSION['flash_message']);
+        $message = $message_data['message'];
+        $type = $message_data['type'];
         
-        // Return the HTML for the notification
         return '<div class="notification notification-'.$type.' show">' . htmlspecialchars($message) . '</div>';
     }
     return '';
 }
 
-// Add other helper functions here as your project grows...
+/**
+ * Checks if a user is logged in and is an admin. Redirects if not.
+ */
 function requireAdmin() {
-    // Implement your admin check logic here
     if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-        setFlashMessage('Accès refusé. Vous devez être administrateur.', 'danger');
+        setFlashMessage('Accès refusé. Vous devez être administrateur pour voir cette page.', 'danger');
         header('Location: ' . SITE_URL . '/auth/login.php');
         exit();
     }
 }
 
+/**
+ * Sanitizes input data.
+ * @param string $data The input to sanitize.
+ * @return string The sanitized data.
+ */
 function sanitizeInput($data) {
     return htmlspecialchars(stripslashes(trim($data)));
 }
 
+/**
+ * Formats a number as a price in MAD.
+ * @param float $price The price to format.
+ * @return string The formatted price string.
+ */
 function formatPrice($price) {
+    if (!is_numeric($price)) {
+        return '0,00 DH';
+    }
     return number_format($price, 2, ',', ' ') . ' DH';
 }
-// Add any other global functions you might have
