@@ -2,68 +2,206 @@
 require_once '../config/config.php';
 requireAdmin();
 
-// ... (Your PHP logic at the top remains the same, it's already good) ...
+// Image upload handling functions
+function uploadProductImages($files) {
+    $upload_dir = '../assets/uploads/products/';
+    $uploaded_files = [];
+    $max_files = 5;
+    $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    $max_size = 5 * 1024 * 1024; // 5MB
+
+    // Create directory if it doesn't exist
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
+    }
+
+    // Check if files array is valid
+    if (!isset($files['product_images']) || !is_array($files['product_images']['name'])) {
+        return $uploaded_files;
+    }
+
+    $file_count = count($files['product_images']['name']);
+    
+    // Limit number of files
+    if ($file_count > $max_files) {
+        throw new Exception("Vous ne pouvez télécharger que $max_files images maximum.");
+    }
+
+    for ($i = 0; $i < $file_count; $i++) {
+        // Skip empty files
+        if ($files['product_images']['error'][$i] === UPLOAD_ERR_NO_FILE) {
+            continue;
+        }
+
+        // Check for upload errors
+        if ($files['product_images']['error'][$i] !== UPLOAD_ERR_OK) {
+            throw new Exception("Erreur lors du téléchargement du fichier " . ($i + 1));
+        }
+
+        // Validate file type
+        $file_type = $files['product_images']['type'][$i];
+        if (!in_array($file_type, $allowed_types)) {
+            throw new Exception("Type de fichier non autorisé pour le fichier " . ($i + 1) . ". Utilisez JPG, PNG ou WEBP.");
+        }
+
+        // Validate file size
+        if ($files['product_images']['size'][$i] > $max_size) {
+            throw new Exception("Le fichier " . ($i + 1) . " est trop volumineux (max 5MB).");
+        }
+
+        // Generate unique filename
+        $extension = pathinfo($files['product_images']['name'][$i], PATHINFO_EXTENSION);
+        $filename = uniqid('product_') . '.' . strtolower($extension);
+        $filepath = $upload_dir . $filename;
+
+        // Move uploaded file
+        if (move_uploaded_file($files['product_images']['tmp_name'][$i], $filepath)) {
+            $uploaded_files[] = 'products/' . $filename;
+        } else {
+            throw new Exception("Erreur lors de la sauvegarde du fichier " . ($i + 1));
+        }
+    }
+
+    return $uploaded_files;
+}
+
+function deleteProductImage($filename) {
+    // If filename already includes products/, use it as is, otherwise add products/
+    if (strpos($filename, 'products/') === 0) {
+        $filepath = '../assets/uploads/' . $filename;
+    } else {
+        $filepath = '../assets/uploads/products/' . $filename;
+    }
+    
+    if (file_exists($filepath)) {
+        unlink($filepath);
+    }
+}
+
+function processProductImages($existing_images_json, $removed_images_string, $new_uploaded_files) {
+    // Get existing images
+    $existing_images = $existing_images_json ? json_decode($existing_images_json, true) : [];
+    
+    // Get removed images list
+    $removed_images = $removed_images_string ? explode(',', $removed_images_string) : [];
+    
+    // Remove deleted images from existing list and delete files
+    foreach ($removed_images as $removed_image) {
+        $removed_image = trim($removed_image);
+        if ($removed_image && in_array($removed_image, $existing_images)) {
+            deleteProductImage($removed_image);
+            $existing_images = array_filter($existing_images, function($img) use ($removed_image) {
+                return $img !== $removed_image;
+            });
+        }
+    }
+    
+    // Add new uploaded images
+    $all_images = array_merge($existing_images, $new_uploaded_files);
+    
+    // Limit to max 5 images
+    $all_images = array_slice($all_images, 0, 5);
+    
+    return json_encode(array_values($all_images));
+}
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
     if ($action === 'add' || $action === 'edit') {
-        // (This block is fine, no changes needed)
-        $id = $action === 'edit' ? (int)$_POST['id'] : 0;
-        $categorie_id = (int)$_POST['categorie_id'];
-        $nom = sanitizeInput($_POST['nom']);
-        $nom_ar = sanitizeInput($_POST['nom_ar']);
-        $description = sanitizeInput($_POST['description']);
-        $description_ar = sanitizeInput($_POST['description_ar']);
-        $prix = (float)$_POST['prix'];
-        $prix_promo = !empty($_POST['prix_promo']) ? (float)$_POST['prix_promo'] : null;
-        $stock = (int)$_POST['stock'];
-        $pieces_count = (int)$_POST['pieces_count'];
-        $age_min = (int)$_POST['age_min'];
-        $age_max = (int)$_POST['age_max'];
-        $reference = sanitizeInput($_POST['reference']);
-        $statut = $_POST['statut'];
-        $featured = isset($_POST['featured']) ? 1 : 0;
-        
-        if ($action === 'add') {
-            $stmt = $pdo->prepare("
-                INSERT INTO produits (categorie_id, nom, nom_ar, description, description_ar, prix, prix_promo, 
-                                    stock, pieces_count, age_min, age_max, reference, statut, featured) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ");
+        try {
+            $id = $action === 'edit' ? (int)$_POST['id'] : 0;
+            $categorie_id = (int)$_POST['categorie_id'];
+            $nom = sanitizeInput($_POST['nom']);
+            $nom_ar = sanitizeInput($_POST['nom_ar']);
+            $description = sanitizeInput($_POST['description']);
+            $description_ar = sanitizeInput($_POST['description_ar']);
+            $prix = (float)$_POST['prix'];
+            $prix_promo = !empty($_POST['prix_promo']) ? (float)$_POST['prix_promo'] : null;
+            $stock = (int)$_POST['stock'];
+            $pieces_count = (int)$_POST['pieces_count'];
+            $age_min = (int)$_POST['age_min'];
+            $age_max = (int)$_POST['age_max'];
+            $reference = sanitizeInput($_POST['reference']);
+            $statut = $_POST['statut'];
+            $featured = isset($_POST['featured']) ? 1 : 0;
             
-            if ($stmt->execute([$categorie_id, $nom, $nom_ar, $description, $description_ar, $prix, $prix_promo, 
-                              $stock, $pieces_count, $age_min, $age_max, $reference, $statut, $featured])) {
-                setFlashMessage('Produit ajouté avec succès !', 'success');
-            } else {
-                setFlashMessage('Erreur lors de l\'ajout du produit', 'danger');
+            // Handle image uploads
+            $uploaded_images = [];
+            if (!empty($_FILES['product_images']['name'][0])) {
+                $uploaded_images = uploadProductImages($_FILES);
             }
-        } else {
-            $stmt = $pdo->prepare("
-                UPDATE produits SET categorie_id = ?, nom = ?, nom_ar = ?, description = ?, description_ar = ?, 
-                                   prix = ?, prix_promo = ?, stock = ?, pieces_count = ?, age_min = ?, age_max = ?, 
-                                   reference = ?, statut = ?, featured = ?
-                WHERE id = ?
-            ");
             
-            if ($stmt->execute([$categorie_id, $nom, $nom_ar, $description, $description_ar, $prix, $prix_promo, 
-                              $stock, $pieces_count, $age_min, $age_max, $reference, $statut, $featured, $id])) {
-                setFlashMessage('Produit modifié avec succès !', 'success');
+            if ($action === 'add') {
+                // For new products, just use uploaded images
+                $images_json = !empty($uploaded_images) ? json_encode($uploaded_images) : null;
+                
+                $stmt = $pdo->prepare("
+                    INSERT INTO produits (categorie_id, nom, nom_ar, description, description_ar, prix, prix_promo, 
+                                        stock, pieces_count, age_min, age_max, reference, statut, featured, images) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                
+                if ($stmt->execute([$categorie_id, $nom, $nom_ar, $description, $description_ar, $prix, $prix_promo, 
+                                  $stock, $pieces_count, $age_min, $age_max, $reference, $statut, $featured, $images_json])) {
+                    setFlashMessage('Produit ajouté avec succès !', 'success');
+                } else {
+                    setFlashMessage('Erreur lors de l\'ajout du produit', 'danger');
+                }
             } else {
-                setFlashMessage('Erreur lors de la modification du produit', 'danger');
+                // For editing, get existing images and process them
+                $stmt = $pdo->prepare("SELECT images FROM produits WHERE id = ?");
+                $stmt->execute([$id]);
+                $current_product = $stmt->fetch();
+                $existing_images_json = $current_product['images'] ?? null;
+                
+                // Process images (handle removals and additions)
+                $removed_images = $_POST['removed_images'] ?? '';
+                $images_json = processProductImages($existing_images_json, $removed_images, $uploaded_images);
+                
+                $stmt = $pdo->prepare("
+                    UPDATE produits SET categorie_id = ?, nom = ?, nom_ar = ?, description = ?, description_ar = ?, 
+                                       prix = ?, prix_promo = ?, stock = ?, pieces_count = ?, age_min = ?, age_max = ?, 
+                                       reference = ?, statut = ?, featured = ?, images = ?
+                    WHERE id = ?
+                ");
+                
+                if ($stmt->execute([$categorie_id, $nom, $nom_ar, $description, $description_ar, $prix, $prix_promo, 
+                                  $stock, $pieces_count, $age_min, $age_max, $reference, $statut, $featured, $images_json, $id])) {
+                    setFlashMessage('Produit modifié avec succès !', 'success');
+                } else {
+                    setFlashMessage('Erreur lors de la modification du produit', 'danger');
+                }
             }
+        } catch (Exception $e) {
+            setFlashMessage('Erreur: ' . $e->getMessage(), 'danger');
         }
-        header('Location: products.php'); // Redirect to avoid form resubmission
+        
+        header('Location: products.php');
         exit();
     } elseif ($action === 'delete') {
         $id = (int)$_POST['id'];
+        
+        // Get product images before deletion to clean up files
+        $stmt = $pdo->prepare("SELECT images FROM produits WHERE id = ?");
+        $stmt->execute([$id]);
+        $product = $stmt->fetch();
+        
+        if ($product && !empty($product['images'])) {
+            $images = json_decode($product['images'], true);
+            foreach ($images as $image) {
+                deleteProductImage($image);
+            }
+        }
+        
         $stmt = $pdo->prepare("DELETE FROM produits WHERE id = ?");
         if ($stmt->execute([$id])) {
             setFlashMessage('Produit supprimé avec succès !', 'success');
         } else {
             setFlashMessage('Erreur lors de la suppression du produit', 'danger');
         }
-        header('Location: products.php'); // Redirect
+        header('Location: products.php');
         exit();
     }
 }
@@ -170,7 +308,7 @@ $page_title = 'Gestion des Produits';
             <div id="productForm" class="admin-dashboard <?php echo !$edit_product && !(isset($_GET['action']) && $_GET['action'] === 'add') ? 'hidden' : ''; ?>">
                 <h3><?php echo $edit_product ? 'Modifier le produit' : 'Ajouter un produit'; ?></h3>
                 
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="<?php echo $edit_product ? 'edit' : 'add'; ?>">
                     <?php if ($edit_product): ?>
                         <input type="hidden" name="id" value="<?php echo $edit_product['id']; ?>">
@@ -196,6 +334,39 @@ $page_title = 'Gestion des Produits';
                     <div class="form-group">
                         <label for="description_ar">Description (Arabe)</label>
                         <textarea id="description_ar" name="description_ar" class="form-control" rows="3"><?php echo htmlspecialchars($edit_product['description_ar'] ?? ''); ?></textarea>
+                    </div>
+                    
+                    <!-- Image Upload Section -->
+                    <div class="form-group">
+                        <label for="product_images">Images du produit</label>
+                        <input type="file" id="product_images" name="product_images[]" class="form-control" accept="image/*" multiple>
+                        <small class="form-text">Vous pouvez sélectionner plusieurs images (max 5). Formats acceptés: JPG, PNG, WEBP</small>
+                        
+                        <?php if ($edit_product && !empty($edit_product['images'])): ?>
+                            <?php 
+                            $existing_images = json_decode($edit_product['images'], true);
+                            if ($existing_images): 
+                            ?>
+                                <div class="existing-images" style="margin-top: 10px;">
+                                    <label>Images actuelles:</label>
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px;">
+                                        <?php foreach ($existing_images as $index => $image): ?>
+                                            <div class="image-preview" style="position: relative; display: inline-block;">
+                                                <img src="<?php echo '../assets/uploads/products/' . htmlspecialchars($image); ?>" 
+                                                     alt="Image produit" 
+                                                     style="width: 80px; height: 80px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;">
+                                                <button type="button" 
+                                                        class="remove-image" 
+                                                        data-image="<?php echo htmlspecialchars($image); ?>"
+                                                        style="position: absolute; top: -5px; right: -5px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer;"
+                                                        title="Supprimer cette image">×</button>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <input type="hidden" id="removed_images" name="removed_images" value="">
+                                </div>
+                            <?php endif; ?>
+                        <?php endif; ?>
                     </div>
                     
                     <div class="form-grid cols-4">
@@ -385,8 +556,6 @@ $page_title = 'Gestion des Produits';
                 } else {
                     productForm.classList.add('hidden');
                     showFormBtn.classList.remove('hidden');
-                    // Optional: clear form or reset URL
-                    // window.history.pushState({}, '', 'products.php');
                 }
             }
 
@@ -397,6 +566,92 @@ $page_title = 'Gestion des Produits';
             if (hideFormBtn) {
                 hideFormBtn.addEventListener('click', () => toggleForm(false));
             }
+
+            // Image upload preview functionality
+            const imageInput = document.getElementById('product_images');
+            const removedImagesInput = document.getElementById('removed_images');
+            let removedImages = [];
+
+            // Handle new image uploads preview
+            if (imageInput) {
+                imageInput.addEventListener('change', function(e) {
+                    const files = Array.from(e.target.files);
+                    const maxFiles = 5;
+                    const maxSize = 5 * 1024 * 1024; // 5MB
+                    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+                    // Validate files
+                    const validFiles = files.filter(file => {
+                        if (!allowedTypes.includes(file.type.toLowerCase())) {
+                            alert(`Le fichier "${file.name}" n'est pas un type d'image autorisé.`);
+                            return false;
+                        }
+                        if (file.size > maxSize) {
+                            alert(`Le fichier "${file.name}" est trop volumineux (max 5MB).`);
+                            return false;
+                        }
+                        return true;
+                    });
+
+                    if (validFiles.length > maxFiles) {
+                        alert(`Vous ne pouvez sélectionner que ${maxFiles} images maximum.`);
+                        e.target.value = '';
+                        return;
+                    }
+
+                    // Create preview container if it doesn't exist
+                    let previewContainer = document.querySelector('.new-images-preview');
+                    if (!previewContainer) {
+                        previewContainer = document.createElement('div');
+                        previewContainer.className = 'new-images-preview';
+                        previewContainer.style.marginTop = '10px';
+                        previewContainer.innerHTML = '<label>Aperçu des nouvelles images:</label><div class="preview-grid" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px;"></div>';
+                        imageInput.parentNode.appendChild(previewContainer);
+                    }
+
+                    const previewGrid = previewContainer.querySelector('.preview-grid');
+                    previewGrid.innerHTML = '';
+
+                    // Create previews
+                    validFiles.forEach((file, index) => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const imagePreview = document.createElement('div');
+                            imagePreview.className = 'image-preview';
+                            imagePreview.style.position = 'relative';
+                            imagePreview.style.display = 'inline-block';
+                            imagePreview.innerHTML = `
+                                <img src="${e.target.result}" 
+                                     alt="Aperçu" 
+                                     style="width: 80px; height: 80px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;">
+                                <div style="position: absolute; bottom: -5px; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; font-size: 10px; text-align: center; padding: 2px; border-radius: 0 0 4px 4px;">${file.name}</div>
+                            `;
+                            previewGrid.appendChild(imagePreview);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                });
+            }
+
+            // Handle existing image removal
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-image')) {
+                    e.preventDefault();
+                    const imageToRemove = e.target.getAttribute('data-image');
+                    const imagePreview = e.target.closest('.image-preview');
+                    
+                    if (confirm('Êtes-vous sûr de vouloir supprimer cette image ?')) {
+                        // Add to removed images list
+                        removedImages.push(imageToRemove);
+                        if (removedImagesInput) {
+                            removedImagesInput.value = removedImages.join(',');
+                        }
+                        
+                        // Hide the image preview
+                        imagePreview.style.display = 'none';
+                    }
+                }
+            });
         });
     </script>
 </body>

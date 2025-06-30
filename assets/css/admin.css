@@ -542,3 +542,206 @@ input:checked + .toggle-slider:before {
 .badge.status-brouillon { background-color: var(--warning); color: var(--text-primary); }
 .badge.status-inactif { background-color: var(--text-muted); }
 .badge.status-rupture { background-color: var(--danger); }
+
+/* =================================================================
+   IMAGE UPLOAD STYLES
+================================================================= */
+
+/* File input styling */
+input[type="file"] {
+    padding: 0.75rem;
+    border: 2px dashed #cbd5e0;
+    border-radius: var(--border-radius-md);
+    background-color: #f7fafc;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+input[type="file"]:hover {
+    border-color: var(--menalego-blue);
+    background-color: rgba(0, 97, 255, 0.02);
+}
+
+input[type="file"]:focus {
+    outline: none;
+    border-color: var(--menalego-blue);
+    box-shadow: 0 0 0 3px rgba(0, 97, 255, 0.1);
+}
+
+/* Existing images display */
+.existing-images {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f8fafc;
+    border-radius: var(--border-radius-md);
+    border: 1px solid #e2e8f0;
+}
+
+.existing-images label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.image-preview {
+    position: relative;
+    display: inline-block;
+    margin: 0.25rem;
+}
+
+.image-preview img {
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease;
+}
+
+.image-preview img:hover {
+    transform: scale(1.05);
+}
+
+.remove-image {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.remove-image:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+}
+
+/* New images preview */
+.new-images-preview {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f0f9ff;
+    border-radius: var(--border-radius-md);
+    border: 1px solid #bfdbfe;
+}
+
+.new-images-preview label {
+    font-weight: 600;
+    color: var(--info);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.preview-grid {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+/* Form text styling */
+.form-text {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    display: block;
+}
+
+/* Upload progress and status */
+.upload-status {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.875rem;
+}
+
+.upload-status.success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.upload-status.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+/* Image validation messages */
+.image-validation {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.image-validation.error {
+    color: var(--danger);
+}
+
+.image-validation.success {
+    color: var(--success);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .existing-images,
+    .new-images-preview {
+        padding: 0.75rem;
+    }
+    
+    .preview-grid {
+        gap: 0.5rem;
+    }
+    
+    .image-preview img {
+        width: 60px !important;
+        height: 60px !important;
+    }
+    
+    .remove-image {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+    }
+}
+
+/* Drag and drop enhancement */
+.file-drop-zone {
+    position: relative;
+    border: 2px dashed #cbd5e0;
+    border-radius: var(--border-radius-md);
+    padding: 2rem;
+    text-align: center;
+    background-color: #f7fafc;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.file-drop-zone:hover,
+.file-drop-zone.drag-over {
+    border-color: var(--menalego-blue);
+    background-color: rgba(0, 97, 255, 0.02);
+}
+
+.file-drop-zone.drag-over {
+    transform: scale(1.01);
+    box-shadow: var(--shadow-md);
+}
+
+.file-drop-text {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+.file-drop-text strong {
+    color: var(--menalego-blue);
+}

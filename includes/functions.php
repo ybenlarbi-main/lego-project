@@ -36,21 +36,14 @@ function getFlashMessage() {
  * Checks if a user is logged in and is an admin. Redirects if not.
  */
 function requireAdmin() {
-    if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
+    if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
         setFlashMessage('Accès refusé. Vous devez être administrateur pour voir cette page.', 'danger');
         header('Location: ' . SITE_URL . '/auth/login.php');
         exit();
     }
 }
 
-/**
- * Sanitizes input data.
- * @param string $data The input to sanitize.
- * @return string The sanitized data.
- */
-function sanitizeInput($data) {
-    return htmlspecialchars(stripslashes(trim($data)));
-}
+
 
 /**
  * Formats a number as a price in MAD.

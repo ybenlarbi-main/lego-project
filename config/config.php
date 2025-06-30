@@ -15,7 +15,7 @@ define('ADMIN_EMAIL', 'admin@menalego.ma');
 define('BASE_PATH', dirname(__DIR__));
 define('UPLOAD_PATH', BASE_PATH . '/assets/uploads/');
 define('UPLOAD_URL', SITE_URL . '/assets/uploads/');
-// require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 // Language settings
 $available_languages = ['fr' => 'Français', 'ar' => 'العربية'];
@@ -65,12 +65,6 @@ function requireLogin() {
     }
 }
 
-function requireAdmin() {
-    if (!isAdmin()) {
-        header('Location: ' . SITE_URL . '/index.php');
-        exit;
-    }
-}
 
 function sanitizeInput($data) {
     return htmlspecialchars(strip_tags(trim($data)));
@@ -80,9 +74,7 @@ function sanitize($data) {
     return htmlspecialchars(strip_tags(trim($data)));
 }
 
-function formatPrice($price, $currency = 'DH') {
-    return number_format($price, 2, ',', ' ') . ' ' . $currency;
-}
+
 
 function getImageUrl($imagePath) {
     if (!$imagePath) return SITE_URL . '/assets/images/placeholder.svg';
@@ -119,26 +111,7 @@ function uploadImage($file, $directory = 'products') {
     return false;
 }
 
-function showError($message) {
-    $_SESSION['error'] = $message;
-}
 
-function showSuccess($message) {
-    $_SESSION['success'] = $message;
-}
-
-function getFlashMessage() {
-    $message = '';
-    if (isset($_SESSION['error'])) {
-        $message = '<div class="alert alert-error">' . $_SESSION['error'] . '</div>';
-        unset($_SESSION['error']);
-    }
-    if (isset($_SESSION['success'])) {
-        $message = '<div class="alert alert-success">' . $_SESSION['success'] . '</div>';
-        unset($_SESSION['success']);
-    }
-    return $message;
-}
 
 function isVendor() {
     return isLoggedIn() && isset($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'vendeur';

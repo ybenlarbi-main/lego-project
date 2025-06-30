@@ -50,10 +50,14 @@ $page_title = "Accueil";
 <html lang="<?php echo getCurrentLanguage(); ?>">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#0061FF">
     <title><?php echo $page_title; ?> - <?php echo SITE_NAME; ?></title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
     <!-- Header -->
@@ -96,10 +100,48 @@ $page_title = "Accueil";
                     <?php if (isAdmin()): ?>
                         <a href="admin/" class="user-btn" style="background: var(--primary-red);">Admin</a>
                     <?php endif; ?>
+                    
+                    <!-- Mobile Navigation Toggle -->
+                    <button class="mobile-nav-toggle" onclick="toggleMobileNav()" aria-label="Menu de navigation" aria-expanded="false">
+                        <span>☰</span>
+                    </button>
                 </div>
             </div>
         </div>
     </header>
+
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+    <nav class="mobile-nav-menu" id="mobileNavMenu">
+        <div class="mobile-nav-header">
+            <div class="logo">
+                <div class="logo-icon">M</div>
+                Menalego
+            </div>
+            <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Fermer le menu">✕</button>
+        </div>
+        
+        <ul class="mobile-nav-links">
+            <li><a href="<?php echo SITE_URL; ?>" onclick="closeMobileNav()">Accueil</a></li>
+            <li><a href="produits.php" onclick="closeMobileNav()">Produits</a></li>
+            <li><a href="categories.php" onclick="closeMobileNav()">Catégories</a></li>
+            <li><a href="about.php" onclick="closeMobileNav()">À propos</a></li>
+            <li><a href="contact.php" onclick="closeMobileNav()">Contact</a></li>
+        </ul>
+        
+        <div class="mobile-user-actions">
+            <?php if (isLoggedIn()): ?>
+                <a href="profile.php" class="user-btn" onclick="closeMobileNav()">Mon Compte</a>
+                <a href="auth/logout.php" class="user-btn" onclick="closeMobileNav()">Déconnexion</a>
+                <?php if (isAdmin()): ?>
+                    <a href="admin/" class="user-btn" onclick="closeMobileNav()">Admin</a>
+                <?php endif; ?>
+            <?php else: ?>
+                <a href="auth/login.php" class="user-btn" onclick="closeMobileNav()">Connexion</a>
+                <a href="auth/register.php" class="user-btn" onclick="closeMobileNav()">Inscription</a>
+            <?php endif; ?>
+        </div>
+    </nav>
 
     <!-- Hero Section -->
     <section class="hero-modern">
@@ -974,6 +1016,182 @@ $page_title = "Accueil";
                 setTimeout(() => cartBtn.classList.remove('bounce'), 600);
             }
         }
+
+        // Mobile Navigation Functions
+        function toggleMobileNav() {
+            const overlay = document.getElementById('mobileNavOverlay');
+            const menu = document.getElementById('mobileNavMenu');
+            const toggle = document.querySelector('.mobile-nav-toggle');
+            const body = document.body;
+            
+            if (overlay && menu && toggle) {
+                const isActive = menu.classList.contains('active');
+                
+                if (isActive) {
+                    // Close the menu
+                    overlay.classList.remove('active');
+                    menu.classList.remove('active');
+                    toggle.setAttribute('aria-expanded', 'false');
+                    body.style.overflow = '';
+                } else {
+                    // Open the menu
+                    overlay.classList.add('active');
+                    menu.classList.add('active');
+                    toggle.setAttribute('aria-expanded', 'true');
+                    body.style.overflow = 'hidden';
+                    
+                    // Force reflow to ensure classes are applied
+                    menu.offsetHeight;
+                }
+            }
+        }
+
+        function closeMobileNav() {
+            const overlay = document.getElementById('mobileNavOverlay');
+            const menu = document.getElementById('mobileNavMenu');
+            const toggle = document.querySelector('.mobile-nav-toggle');
+            const body = document.body;
+            
+            if (overlay && menu && toggle) {
+                overlay.classList.remove('active');
+                menu.classList.remove('active');
+                toggle.setAttribute('aria-expanded', 'false');
+                body.style.overflow = '';
+            }
+        }
+
+        // Initialize mobile navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure mobile nav is closed on load
+            closeMobileNav();
+            
+            // Close mobile nav when clicking overlay
+            const overlay = document.getElementById('mobileNavOverlay');
+            if (overlay) {
+                overlay.addEventListener('click', closeMobileNav);
+            }
+            
+            // Close mobile nav with escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeMobileNav();
+                }
+            });
+            
+            // Close mobile nav when window is resized to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 968) {
+                    closeMobileNav();
+                }
+            });
+        });
+
+        // Enhanced Filter Toggle for Mobile
+        function toggleFilters() {
+            const filtersPanel = document.getElementById('filtersPanel');
+            const toggleBtn = document.querySelector('.filters-toggle');
+            
+            if (filtersPanel && toggleBtn) {
+                const isActive = filtersPanel.classList.contains('active');
+                
+                if (isActive) {
+                    filtersPanel.classList.remove('active');
+                    toggleBtn.innerHTML = '<i class="icon-filter"></i><span>Filtrer</span>';
+                } else {
+                    filtersPanel.classList.add('active');
+                    toggleBtn.innerHTML = '<i class="icon-filter"></i><span>Masquer</span>';
+                }
+            }
+        }
+
+        // Responsive utilities
+        function checkViewport() {
+            const width = window.innerWidth;
+            const filtersPanel = document.getElementById('filtersPanel');
+            
+            if (width > 968 && filtersPanel) {
+                filtersPanel.classList.remove('active');
+                filtersPanel.style.display = '';
+            }
+        }
+
+        // Touch and swipe support for mobile navigation
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        function handleTouchStart(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }
+
+        function handleTouchEnd(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const swipeDistance = touchEndX - touchStartX;
+            
+            // Swipe right to open menu (from left edge)
+            if (swipeDistance > swipeThreshold && touchStartX < 50) {
+                toggleMobileNav();
+            }
+            
+            // Swipe left to close menu
+            if (swipeDistance < -swipeThreshold) {
+                closeMobileNav();
+            }
+        }
+
+        // Initialize responsive features
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add touch event listeners for swipe navigation
+            document.addEventListener('touchstart', handleTouchStart, false);
+            document.addEventListener('touchend', handleTouchEnd, false);
+            
+            // Check viewport on resize
+            window.addEventListener('resize', checkViewport);
+            
+            // Close mobile nav when clicking outside
+            document.addEventListener('click', function(e) {
+                const mobileNav = document.getElementById('mobileNavMenu');
+                const toggleBtn = document.querySelector('.mobile-nav-toggle');
+                
+                if (mobileNav && 
+                    mobileNav.classList.contains('active') && 
+                    !mobileNav.contains(e.target) && 
+                    !toggleBtn.contains(e.target)) {
+                    closeMobileNav();
+                }
+            });
+            
+            // Enhanced keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeMobileNav();
+                    
+                    const filtersPanel = document.getElementById('filtersPanel');
+                    if (filtersPanel && filtersPanel.classList.contains('active')) {
+                        toggleFilters();
+                    }
+                }
+            });
+            
+            // Smooth scroll for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                        closeMobileNav();
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>

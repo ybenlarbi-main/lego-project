@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_role'] = $user['role'];
             $_SESSION['user_name'] = $user['prenom'] . ' ' . $user['nom'];
             
-            showSuccess('Connexion réussie !');
+            setFlashMessage('Connexion réussie !', 'success');
             
             // Redirect to admin if admin user
             if ($user['role'] === 'admin') {
