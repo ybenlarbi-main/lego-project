@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Menalego PHP Server",
+			"type": "shell",
+			"command": "php",
+			"args": [
+				"-S",
+				"localhost:8000",
+				"-t",
+				"c:\\xampp\\htdocs\\new-mohamed\\menalego"
+			],
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}
