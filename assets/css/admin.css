@@ -1275,28 +1275,4 @@ input[type="file"]:focus {
     color: var(--menalego-blue);
 }
 
-/* =================================================================
-   ADMIN LAYOUT FORCE (Debug)
-================================================================= */
-
-/* Force sidebar to be visible */
-.admin-body .admin-container {
-    display: flex !important;
-    height: 100vh !important;
-}
-
-.admin-body .admin-sidebar {
-    display: block !important;
-    width: 250px !important;
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
-    color: white !important;
-    flex-shrink: 0 !important;
-    position: relative !important;
-}
-
-.admin-body .admin-main {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    background: #f8fafc !important;
-    padding: 2rem !important;
-}
+/* Debug CSS removed - layout is working correctly */

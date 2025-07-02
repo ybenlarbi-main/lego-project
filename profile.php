@@ -240,10 +240,11 @@ $page_title = 'Mon Profil';
                     <div class="profile-section" id="profile">
                         <div class="profile-section-header">
                             <h3>Informations personnelles</h3>
-                            <button class="btn-secondary btn-sm" onclick="editProfile()">Modifier</button>
+                            <button class="btn-secondary btn-sm" id="edit-profile-btn" onclick="toggleEditProfile()">Modifier</button>
                         </div>
                         
-                        <div class="form-grid">
+                        <!-- Display Mode -->
+                        <div id="profile-display" class="form-grid">
                             <div class="form-group">
                                 <label>Prénom</label>
                                 <p><?php echo htmlspecialchars($user['prenom']); ?></p>
@@ -278,6 +279,60 @@ $page_title = 'Mon Profil';
                                 <label>Code postal</label>
                                 <p><?php echo $user['code_postal'] ? htmlspecialchars($user['code_postal']) : '-'; ?></p>
                             </div>
+                        </div>
+                        
+                        <!-- Edit Mode -->
+                        <div id="profile-edit" class="form-grid" style="display: none;">
+                            <form method="POST" action="update-profile.php">
+                                <div class="form-group">
+                                    <label for="edit_prenom">Prénom *</label>
+                                    <input type="text" id="edit_prenom" name="prenom" class="form-control" 
+                                           value="<?php echo htmlspecialchars($user['prenom']); ?>" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="edit_nom">Nom *</label>
+                                    <input type="text" id="edit_nom" name="nom" class="form-control" 
+                                           value="<?php echo htmlspecialchars($user['nom']); ?>" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="edit_email">Email *</label>
+                                    <input type="email" id="edit_email" name="email" class="form-control" 
+                                           value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="edit_telephone">Téléphone</label>
+                                    <input type="tel" id="edit_telephone" name="telephone" class="form-control" 
+                                           value="<?php echo htmlspecialchars($user['telephone'] ?? ''); ?>">
+                                </div>
+                                
+                                <div class="form-group full-width">
+                                    <label for="edit_adresse">Adresse</label>
+                                    <input type="text" id="edit_adresse" name="adresse" class="form-control" 
+                                           value="<?php echo htmlspecialchars($user['adresse'] ?? ''); ?>">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="edit_ville">Ville</label>
+                                    <input type="text" id="edit_ville" name="ville" class="form-control" 
+                                           value="<?php echo htmlspecialchars($user['ville'] ?? ''); ?>">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="edit_code_postal">Code postal</label>
+                                    <input type="text" id="edit_code_postal" name="code_postal" class="form-control" 
+                                           value="<?php echo htmlspecialchars($user['code_postal'] ?? ''); ?>">
+                                </div>
+                                
+                                <div class="form-group full-width">
+                                    <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 1rem;">
+                                        <button type="submit" class="btn-primary">Sauvegarder</button>
+                                        <button type="button" class="btn-secondary" onclick="toggleEditProfile()">Annuler</button>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
                     
@@ -367,8 +422,22 @@ $page_title = 'Mon Profil';
     ?>
     
     <script>
-        function editProfile() {
-            alert('La fonctionnalité de modification du profil sera bientôt disponible');
+        function toggleEditProfile() {
+            const displayMode = document.getElementById('profile-display');
+            const editMode = document.getElementById('profile-edit');
+            const editBtn = document.getElementById('edit-profile-btn');
+            
+            if (displayMode.style.display === 'none') {
+                // Switch to display mode
+                displayMode.style.display = 'grid';
+                editMode.style.display = 'none';
+                editBtn.textContent = 'Modifier';
+            } else {
+                // Switch to edit mode
+                displayMode.style.display = 'none';
+                editMode.style.display = 'grid';
+                editBtn.textContent = 'Annuler';
+            }
         }
         
         // Tab navigation

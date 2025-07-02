@@ -8,7 +8,7 @@ $user_id = $_SESSION['user_id'];
 
 // Get cart items
 $stmt = $pdo->prepare("
-    SELECT p.*, pr.nom, pr.prix, pr.stock, pa.quantite, 
+    SELECT pr.id as produit_id, pr.nom, pr.prix, pr.stock, pr.images, pa.quantite, 
            (pr.prix * pa.quantite) as total,
            c.nom as categorie_nom
     FROM panier pa 
@@ -34,8 +34,251 @@ $page_title = 'Mon Panier';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title; ?> - <?php echo SITE_NAME; ?></title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo time(); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Header cart-specific styles */
+        .cart-btn.active {
+            background: #0061FF !important;
+            color: white !important;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+        }
+        
+        .admin-btn {
+            background: #ef4444 !important;
+            color: white !important;
+        }
+        
+        /* Cart-specific styles */
+        .cart-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .cart-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            border: 1px solid #f0f0f0;
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .cart-item:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+        
+        .cart-item-content {
+            display: grid;
+            grid-template-columns: 120px 1fr auto;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        
+        .cart-item-image {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .cart-item-info h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .cart-item-info h4 a {
+            color: #1f2937;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .cart-item-info h4 a:hover {
+            color: #0061FF;
+        }
+        
+        .cart-item-details {
+            color: #6b7280;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin: 0.25rem 0;
+        }
+        
+        .cart-item-actions {
+            text-align: right;
+            min-width: 180px;
+        }
+        
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 1rem;
+            gap: 0.5rem;
+        }
+        
+        .quantity-input {
+            width: 70px;
+            padding: 0.4rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 500;
+            transition: border-color 0.2s ease;
+        }
+        
+        .quantity-input:focus {
+            outline: none;
+            border-color: #0061FF;
+            box-shadow: 0 0 0 3px rgba(0, 97, 255, 0.1);
+        }
+        
+        .item-total {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #059669;
+            margin-bottom: 1rem;
+        }
+        
+        .remove-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .remove-btn:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+        
+        .cart-summary {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            border: 1px solid #f0f0f0;
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+        }
+        
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+        
+        .summary-divider {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 1.5rem 0;
+            padding-top: 1rem;
+            border-top: 2px solid #e5e7eb;
+        }
+        
+        .checkout-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #0061FF 0%, #4285F4 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 97, 255, 0.3);
+        }
+        
+        .continue-shopping {
+            width: 100%;
+            background: #f8fafc;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            text-align: center;
+            display: block;
+            transition: all 0.2s ease;
+        }
+        
+        .continue-shopping:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+        }
+        
+        .empty-cart {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        }
+        
+        .empty-cart h3 {
+            font-size: 1.5rem;
+            color: #374151;
+            margin-bottom: 1rem;
+        }
+        
+        .empty-cart p {
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .cart-container {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .cart-item-content {
+                grid-template-columns: 100px 1fr;
+                gap: 1rem;
+            }
+            
+            .cart-item-actions {
+                grid-column: 1 / -1;
+                margin-top: 1rem;
+                text-align: left;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .quantity-control {
+                margin-bottom: 0;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -52,21 +295,22 @@ $page_title = 'Mon Panier';
                         <li><a href="<?php echo SITE_URL; ?>">Accueil</a></li>
                         <li><a href="produits.php">Produits</a></li>
                         <li><a href="categories.php">Catégories</a></li>
-                        <li><a href="about.php">À propos</a></li>
-                        <li><a href="contact.php">Contact</a></li>
                     </ul>
                 </nav>
                 
                 <div class="user-actions">
-                    <a href="cart.php" class="cart-btn">
-                        🛒 Panier 
-                        <span class="cart-count" id="cart-count"><?php echo count($cart_items); ?></span>
+                    <a href="cart.php" class="cart-btn active">
+                        <i class="fas fa-shopping-cart"></i> Panier 
+                        <span class="cart-count"><?php echo count($cart_items); ?></span>
                     </a>
-                    <a href="profile.php" class="user-btn">Mon Compte</a>
-                    <a href="auth/logout.php" class="user-btn">Déconnexion</a>
-                    
-                    <?php if (isAdmin()): ?>
-                        <a href="admin/" class="user-btn" style="background: var(--primary-red);">Admin</a>
+                    <?php if (isLoggedIn()): ?>
+                        <a href="profile.php" class="user-btn"><i class="fas fa-user"></i> Mon Compte</a>
+                        <a href="auth/logout.php" class="user-btn"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+                        <?php if (isAdmin()): ?>
+                            <a href="admin/" class="user-btn admin-btn"><i class="fas fa-cog"></i> Admin</a>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <a href="auth/login.php" class="user-btn"><i class="fas fa-sign-in-alt"></i> Connexion</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -85,60 +329,60 @@ $page_title = 'Mon Panier';
             <?php echo getFlashMessage(); ?>
             
             <?php if (empty($cart_items)): ?>
-                <div class="text-center" style="padding: 4rem 0;">
-                    <h3>Votre panier est vide</h3>
-                    <p>Découvrez nos produits et ajoutez-les à votre panier</p>
-                    <a href="produits.php" class="btn-primary">Voir nos produits</a>
+                <div class="empty-cart">
+                    <h3>🛒 Votre panier est vide</h3>
+                    <p>Découvrez nos magnifiques créations LEGO® inspirées du patrimoine marocain</p>
+                    <a href="produits.php" class="checkout-btn">Découvrir nos produits</a>
                 </div>
             <?php else: ?>
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+                <div class="cart-container">
                     <!-- Cart Items -->
                     <div>
                         <?php foreach ($cart_items as $item): ?>
-                            <div style="background: white; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                                <div style="display: grid; grid-template-columns: 100px 1fr auto; gap: 1rem; align-items: center;">
+                            <div class="cart-item">
+                                <div class="cart-item-content">
                                     <!-- Product Image -->
                                     <img src="<?php echo getImageUrl($item['images'] ? json_decode($item['images'])[0] : null); ?>" 
                                          alt="<?php echo htmlspecialchars($item['nom']); ?>" 
-                                         style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px;">
+                                         class="cart-item-image">
                                     
                                     <!-- Product Info -->
-                                    <div>
-                                        <h4 style="margin-bottom: 0.5rem;">
-                                            <a href="product.php?id=<?php echo $item['produit_id']; ?>" style="color: var(--dark-blue); text-decoration: none;">
+                                    <div class="cart-item-info">
+                                        <h4>
+                                            <a href="product.php?id=<?php echo $item['produit_id']; ?>">
                                                 <?php echo htmlspecialchars($item['nom']); ?>
                                             </a>
                                         </h4>
-                                        <p style="color: var(--medium-gray); font-size: 0.9rem; margin-bottom: 0.5rem;">
-                                            Catégorie: <?php echo htmlspecialchars($item['categorie_nom']); ?>
-                                        </p>
-                                        <p style="color: var(--medium-gray); font-size: 0.9rem;">
-                                            Prix unitaire: <?php echo formatPrice($item['prix']); ?>
-                                        </p>
-                                        <p style="color: var(--medium-gray); font-size: 0.9rem;">
-                                            Stock disponible: <?php echo $item['stock']; ?>
-                                        </p>
+                                        <div class="cart-item-details">
+                                            <strong>Catégorie:</strong> <?php echo htmlspecialchars($item['categorie_nom'] ?? 'Non classé'); ?>
+                                        </div>
+                                        <div class="cart-item-details">
+                                            <strong>Prix unitaire:</strong> <?php echo formatPrice($item['prix']); ?>
+                                        </div>
+                                        <div class="cart-item-details">
+                                            <strong>Stock disponible:</strong> <?php echo $item['stock']; ?> unités
+                                        </div>
                                     </div>
                                     
                                     <!-- Quantity and Actions -->
-                                    <div style="text-align: right;">
-                                        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                                            <label style="margin-right: 0.5rem; font-size: 0.9rem;">Quantité:</label>
+                                    <div class="cart-item-actions">
+                                        <div class="quantity-control">
+                                            <label>Qté:</label>
                                             <input type="number" 
+                                                   class="quantity-input"
                                                    value="<?php echo $item['quantite']; ?>" 
                                                    min="1" 
                                                    max="<?php echo $item['stock']; ?>"
-                                                   onchange="updateCartItem(<?php echo $item['produit_id']; ?>, this.value)"
-                                                   style="width: 60px; padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px;">
+                                                   onchange="updateCartItem(<?php echo $item['produit_id']; ?>, this.value)">
                                         </div>
                                         
-                                        <div style="font-size: 1.2rem; font-weight: bold; color: var(--primary-red); margin-bottom: 1rem;">
+                                        <div class="item-total">
                                             <?php echo formatPrice($item['total']); ?>
                                         </div>
                                         
                                         <button onclick="removeFromCart(<?php echo $item['produit_id']; ?>)" 
-                                                style="background: var(--primary-red); color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;">
-                                            Supprimer
+                                                class="remove-btn">
+                                            🗑️ Supprimer
                                         </button>
                                     </div>
                                 </div>
@@ -147,32 +391,39 @@ $page_title = 'Mon Panier';
                     </div>
                     
                     <!-- Cart Summary -->
-                    <div style="background: white; border-radius: 8px; padding: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); height: fit-content;">
-                        <h3 style="margin-bottom: 1rem;">Résumé de la commande</h3>
+                    <div class="cart-summary">
+                        <h3 style="margin: 0 0 1.5rem 0; color: #1f2937;">Résumé de la commande</h3>
                         
-                        <div style="border-bottom: 1px solid #eee; padding-bottom: 1rem; margin-bottom: 1rem;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span>Sous-total (<?php echo count($cart_items); ?> articles)</span>
-                                <span><?php echo formatPrice($cart_total); ?></span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span>Frais de livraison</span>
-                                <span>Gratuit</span>
-                            </div>
+                        <div class="summary-line summary-divider">
+                            <span>Sous-total (<?php echo count($cart_items); ?> articles)</span>
+                            <span style="font-weight: 600;"><?php echo formatPrice($cart_total); ?></span>
                         </div>
                         
-                        <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold; margin-bottom: 2rem;">
+                        <div class="summary-line">
+                            <span>Frais de livraison</span>
+                            <span style="color: #059669; font-weight: 600;">Gratuit 🚚</span>
+                        </div>
+                        
+                        <div class="summary-total">
                             <span>Total</span>
-                            <span style="color: var(--primary-red);" id="cart-total"><?php echo formatPrice($cart_total); ?></span>
+                            <span style="color: #059669;" id="cart-total"><?php echo formatPrice($cart_total); ?></span>
                         </div>
                         
-                        <button onclick="proceedToCheckout()" class="btn-primary" style="width: 100%; margin-bottom: 1rem;">
-                            Passer la commande
+                        <button onclick="proceedToCheckout()" class="checkout-btn">
+                            🛒 Passer la commande
                         </button>
                         
-                        <a href="produits.php" class="btn-secondary" style="width: 100%; display: block; text-align: center;">
-                            Continuer mes achats
+                        <a href="produits.php" class="continue-shopping">
+                            ← Continuer mes achats
                         </a>
+                        
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0284c7;">
+                            <div style="font-size: 0.85rem; color: #0369a1;">
+                                ✓ Livraison gratuite<br>
+                                ✓ Retour sous 30 jours<br>
+                                ✓ Garantie qualité LEGO®
+                            </div>
+                        </div>
                     </div>
                 </div>
             <?php endif; ?>

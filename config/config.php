@@ -1,7 +1,14 @@
 <?php
-// Start session
+// Enhanced session configuration with fallback
 if (session_status() == PHP_SESSION_NONE) {
-    session_start();
+    // Include fallback session handler
+    require_once __DIR__ . '/session-fallback.php';
+    
+    // Try the safer session start method
+    if (!startSessionSafely()) {
+        // Final fallback - basic session with error suppression
+        @session_start();
+    }
 }
 
 // Database configuration
