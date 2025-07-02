@@ -13,8 +13,65 @@ if (session_status() == PHP_SESSION_NONE) {
 
 // Database configuration
 require_once __DIR__ . '/database.php';
-// --- ADD THIS LINE ---
-// --------------------
+
+// Include fatal error handler
+require_once __DIR__ . '/fatal-error-handler.php';
+
+// Custom error handler
+function custom_error_handler($errno, $errstr, $errfile, $errline) {
+    // Only handle errors based on error_reporting settings
+    if (!(error_reporting() & $errno)) {
+        return false;
+    }
+    
+    // Get error type as string
+    $error_types = [
+        E_ERROR => 'Error',
+        E_WARNING => 'Warning',
+        E_PARSE => 'Parse Error',
+        E_NOTICE => 'Notice',
+        E_CORE_ERROR => 'Core Error',
+        E_CORE_WARNING => 'Core Warning',
+        E_COMPILE_ERROR => 'Compile Error',
+        E_COMPILE_WARNING => 'Compile Warning',
+        E_USER_ERROR => 'User Error',
+        E_USER_WARNING => 'User Warning',
+        E_USER_NOTICE => 'User Notice',
+        E_STRICT => 'Strict Error',
+        E_RECOVERABLE_ERROR => 'Recoverable Error',
+        E_DEPRECATED => 'Deprecated',
+        E_USER_DEPRECATED => 'User Deprecated'
+    ];
+    
+    $error_type = isset($error_types[$errno]) ? $error_types[$errno] : 'Unknown Error';
+    
+    // For fatal errors, redirect to error page
+    if ($errno == E_ERROR || $errno == E_USER_ERROR || $errno == E_CORE_ERROR) {
+        header("Location: " . SITE_URL . "/error.php?" . http_build_query([
+            'type' => $error_type,
+            'message' => $errstr,
+            'file' => $errfile,
+            'line' => $errline,
+            'back' => $_SERVER['REQUEST_URI']
+        ]));
+        exit;
+    }
+    
+    // For non-fatal errors, store in session and show on next page
+    $_SESSION['error_message'] = [
+        'type' => $error_type,
+        'message' => $errstr,
+        'file' => $errfile,
+        'line' => $errline
+    ];
+    
+    // Let PHP handle the error as well
+    return false;
+}
+
+// Set the custom error handler
+set_error_handler('custom_error_handler', E_ALL);
+
 // Site configuration
 define('SITE_NAME', 'Menalego');
 define('SITE_URL', 'http://localhost/new-mohamed/menalego');

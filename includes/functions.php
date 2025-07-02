@@ -122,3 +122,50 @@ function getStatusText($status) {
             return 'Inconnu';
     }
 }
+
+/**
+ * Display any stored error messages in a user-friendly format
+ * @return string HTML for the error message or empty string if no error
+ */
+function displayErrorMessage() {
+    if (isset($_SESSION['error_message'])) {
+        $error = $_SESSION['error_message'];
+        unset($_SESSION['error_message']);
+        
+        return '
+        <div class="notification notification-danger" style="margin-bottom: 1.5rem;">
+            <div style="font-weight: bold;">' . htmlspecialchars($error['type']) . ':</div>
+            <div>' . htmlspecialchars($error['message']) . '</div>
+            <div style="font-size: 0.8rem; margin-top: 0.5rem; color: #666;">
+                ' . htmlspecialchars($error['file']) . ' (ligne ' . $error['line'] . ')
+            </div>
+        </div>';
+    }
+    
+    return '';
+}
+
+/**
+ * Redirect to the error page with details about the error
+ * @param string $errorMessage The error message
+ * @param string $errorType The type of error
+ * @param string $file The file where the error occurred
+ * @param int $line The line where the error occurred
+ */
+function redirectToErrorPage($errorMessage, $errorType = 'Error', $file = '', $line = 0) {
+    $backUrl = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'index.php';
+    
+    // If file is not provided, use the current file
+    if (empty($file)) {
+        $file = __FILE__;
+    }
+    
+    header("Location: " . SITE_URL . "/error.php?" . http_build_query([
+        'type' => $errorType,
+        'message' => $errorMessage,
+        'file' => $file,
+        'line' => $line,
+        'back' => $backUrl
+    ]));
+    exit;
+}

@@ -120,8 +120,23 @@ $all_users = $all_users_stmt->fetchAll();
 
 foreach ($all_users as $user) {
     $stats['total']++;
-    $stats[$user['statut']]++;
-    $stats[$user['role'] . 's']++;
+    
+    // Check if status exists in stats array to prevent undefined index error
+    if (isset($stats[$user['statut']])) {
+        $stats[$user['statut']]++;
+    } else {
+        // Log unexpected status
+        error_log("Unexpected user status: " . $user['statut']);
+    }
+    
+    // Check if role exists in stats array
+    $role_key = $user['role'] . 's';
+    if (isset($stats[$role_key])) {
+        $stats[$role_key]++;
+    } else {
+        // Log unexpected role
+        error_log("Unexpected user role: " . $user['role']);
+    }
 }
 
 $page_title = "Gestion des Utilisateurs";

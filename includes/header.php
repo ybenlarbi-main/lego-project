@@ -25,6 +25,7 @@
     <?php endif; ?>
 </head>
 <body>
+    <?php echo displayErrorMessage(); ?>
     <header class="header">
         <!-- Header Top -->
         <div class="header-top">
