@@ -93,10 +93,10 @@ $where_clause = implode(' AND ', $where_conditions);
 $stmt = $pdo->prepare("
     SELECT u.*, 
            COUNT(DISTINCT c.id) as order_count,
-           COALESCE(SUM(c.total), 0) as total_spent,
+           COALESCE(SUM(c.total_ttc), 0) as total_spent,
            MAX(c.date_commande) as last_order_date
     FROM utilisateurs u 
-    LEFT JOIN commandes c ON u.id = c.user_id 
+    LEFT JOIN commandes c ON u.id = c.client_id 
     WHERE $where_clause
     GROUP BY u.id 
     ORDER BY u.date_creation DESC
@@ -107,9 +107,9 @@ $users = $stmt->fetchAll();
 // Get user statistics
 $stats = [
     'total' => 0,
-    'active' => 0,
-    'inactive' => 0,
-    'suspended' => 0,
+    'actif' => 0,
+    'inactif' => 0,
+    'suspendu' => 0,
     'clients' => 0,
     'vendors' => 0,
     'admins' => 0
@@ -200,7 +200,7 @@ $page_title = "Gestion des Utilisateurs";
                         <h3 class="stat-title">Utilisateurs Actifs</h3>
                         <div class="stat-icon">✅</div>
                     </div>
-                    <p class="stat-value"><?php echo $stats['active']; ?></p>
+                    <p class="stat-value"><?php echo $stats['actif']; ?></p>
                 </div>
                 
                 <div class="stat-card">

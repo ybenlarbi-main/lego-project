@@ -41,10 +41,10 @@ try {
         $stmt = $pdo->query("SELECT COUNT(*) FROM commandes WHERE statut = 'en_attente'");
         $stats['pending_orders'] = $stmt->fetchColumn();
         
-        $stmt = $pdo->query("SELECT COALESCE(SUM(total), 0) FROM commandes WHERE statut != 'annulee'");
+        $stmt = $pdo->query("SELECT COALESCE(SUM(total_ttc), 0) FROM commandes WHERE statut != 'annulee'");
         $stats['total_revenue'] = $stmt->fetchColumn();
         
-        $stmt = $pdo->query("SELECT COALESCE(SUM(total), 0) FROM commandes WHERE DATE(date_commande) = CURDATE()");
+        $stmt = $pdo->query("SELECT COALESCE(SUM(total_ttc), 0) FROM commandes WHERE DATE(date_commande) = CURDATE()");
         $stats['today_revenue'] = $stmt->fetchColumn();
     } catch (Exception $e) {
         $stats['total_orders'] = 0;

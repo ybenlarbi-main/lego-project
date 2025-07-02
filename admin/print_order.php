@@ -17,7 +17,7 @@ $stmt = $pdo->prepare("
     SELECT c.*, 
            u.prenom, u.nom, u.email, u.telephone
     FROM commandes c 
-    LEFT JOIN utilisateurs u ON c.user_id = u.id 
+    LEFT JOIN utilisateurs u ON c.client_id = u.id 
     WHERE c.id = ?
 ");
 $stmt->execute([$order_id]);
