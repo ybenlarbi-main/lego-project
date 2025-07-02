@@ -387,7 +387,30 @@ $page_title = $product['nom'];
             .then(data => {
                 if (data.success) {
                     updateCartCount();
-                    alert('Produit ajouté au panier !');
+                    
+                    // Show a nice notification instead of alert
+                    const notification = document.createElement('div');
+                    notification.className = 'notification notification-success show';
+                    notification.innerHTML = `
+                        <div style="display: flex; align-items: center;">
+                            <span style="margin-right: 10px; font-size: 1.2em;">✓</span>
+                            <div>
+                                <div><strong>Produit ajouté au panier!</strong></div>
+                                <div style="margin-top: 5px;">
+                                    <a href="cart.php" class="btn-link">Voir mon panier</a>
+                                    <span style="margin: 0 5px;">ou</span>
+                                    <a href="checkout.php" class="btn-link">Commander</a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(notification);
+                    
+                    // Remove notification after 5 seconds
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                        setTimeout(() => notification.remove(), 500);
+                    }, 5000);
                 } else {
                     alert(data.message || 'Erreur lors de l\'ajout au panier');
                 }

@@ -267,9 +267,8 @@ $page_title = 'Mon Panier';
         }
 
         function proceedToCheckout() {
-            alert('Fonctionnalité de commande en cours de développement!');
-            // Here you would redirect to checkout page
-            // window.location.href = 'checkout.php';
+            // Redirect to checkout page
+            window.location.href = 'checkout.php';
         }
     </script>
 </body>

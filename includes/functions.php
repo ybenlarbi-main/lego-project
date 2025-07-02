@@ -56,3 +56,69 @@ function formatPrice($price) {
     }
     return number_format($price, 2, ',', ' ') . ' DH';
 }
+
+/**
+ * Formats a date in the French format.
+ * @param string $date The date to format.
+ * @param bool $with_time Whether to include the time.
+ * @return string The formatted date string.
+ */
+function formatDate($date, $with_time = true) {
+    if (!$date) {
+        return '-';
+    }
+    
+    $timestamp = strtotime($date);
+    if ($with_time) {
+        return date('d/m/Y à H:i', $timestamp);
+    }
+    return date('d/m/Y', $timestamp);
+}
+
+/**
+ * Get status badge class for order status
+ * @param string $status The order status
+ * @return string CSS class for the status badge
+ */
+function getStatusBadgeClass($status) {
+    switch ($status) {
+        case 'en_attente':
+            return 'badge-warning';
+        case 'confirmee':
+            return 'badge-info';
+        case 'preparee':
+            return 'badge-primary';
+        case 'expediee':
+            return 'badge-primary';
+        case 'livree':
+            return 'badge-success';
+        case 'annulee':
+            return 'badge-danger';
+        default:
+            return 'badge-secondary';
+    }
+}
+
+/**
+ * Get human-readable text for order status
+ * @param string $status The order status
+ * @return string Human-readable status text
+ */
+function getStatusText($status) {
+    switch ($status) {
+        case 'en_attente':
+            return 'En attente';
+        case 'confirmee':
+            return 'Confirmée';
+        case 'preparee':
+            return 'Préparée';
+        case 'expediee':
+            return 'Expédiée';
+        case 'livree':
+            return 'Livrée';
+        case 'annulee':
+            return 'Annulée';
+        default:
+            return 'Inconnu';
+    }
+}

@@ -58,6 +58,10 @@ function isAdmin() {
     return isLoggedIn() && isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin';
 }
 
+function getCurrentUserId() {
+    return $_SESSION['user_id'] ?? 0;
+}
+
 function requireLogin() {
     if (!isLoggedIn()) {
         header('Location: ' . SITE_URL . '/auth/login.php');

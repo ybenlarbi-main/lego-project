@@ -259,54 +259,67 @@ $page_title = 'Gestion des Produits';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title; ?> - <?php echo SITE_NAME; ?></title>
-    <link rel="stylesheet" href="../assets/css/admin.css">
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="../assets/css/admin.css?v=<?php echo time(); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body>
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <a href="<?php echo SITE_URL; ?>/admin" class="logo">
-                    <div class="logo-icon">M</div>
-                    Menalego - Admin
+<body class="admin-body">
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.php" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
                 </a>
-                
-                <div class="user-actions">
-                    <a href="<?php echo SITE_URL; ?>" class="user-btn" target="_blank">Voir le site</a>
-                    <a href="../auth/logout.php" class="user-btn">Déconnexion</a>
+                <a href="products.php" class="nav-item active">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-text">Produits</span>
+                </a>
+                <a href="categories.php" class="nav-item">
+                    <span class="nav-icon">📂</span>
+                    <span class="nav-text">Catégories</span>
+                </a>
+                <a href="users.php" class="nav-item">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Utilisateurs</span>
+                </a>
+                <a href="orders.php" class="nav-item">
+                    <span class="nav-icon">🛒</span>
+                    <span class="nav-text">Commandes</span>
+                </a>
+                <a href="../" class="nav-item">
+                    <span class="nav-icon">🌐</span>
+                    <span class="nav-text">Voir le site</span>
+                </a>
+                <a href="../auth/logout.php" class="nav-item">
+                    <span class="nav-icon">🚪</span>
+                    <span class="nav-text">Déconnexion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="admin-header">
+                <h1>Gestion des Produits</h1>
+                <div class="admin-actions">
+                    <button id="showFormBtn" class="btn btn-primary">Ajouter un produit</button>
                 </div>
             </div>
-        </div>
-    </header>
 
-    <!-- Admin Navigation -->
-    <nav class="admin-nav">
-        <div class="container">
-            <ul>
-                <li><a href="index.php">Dashboard</a></li>
-                <li><a href="products.php" class="active">Produits</a></li>
-                <li><a href="categories.php">Catégories</a></li>
-                <li><a href="orders.php">Commandes</a></li>
-                <li><a href="users.php">Utilisateurs</a></li>
-                <li><a href="reviews.php">Avis</a></li>
-            </ul>
-        </div>
-    </nav>
-
-    <!-- Products Management -->
-    <section class="products-section">
-        <div class="container">
-            <div class="page-header">
-                <h1>Gestion des Produits</h1>
-                <button id="showFormBtn" class="btn-primary">Ajouter un produit</button>
-            </div>
-            
+            <!-- Flash Messages -->
             <?php echo getFlashMessage(); ?>
             
             <!-- Add/Edit Form Panel -->
-            <div id="productForm" class="admin-dashboard <?php echo !$edit_product && !(isset($_GET['action']) && $_GET['action'] === 'add') ? 'hidden' : ''; ?>">
-                <h3><?php echo $edit_product ? 'Modifier le produit' : 'Ajouter un produit'; ?></h3>
+            <div id="productForm" class="admin-card <?php echo !$edit_product && !(isset($_GET['action']) && $_GET['action'] === 'add') ? 'hidden' : ''; ?>">
+                <div class="card-header">
+                    <h3><?php echo $edit_product ? 'Modifier le produit' : 'Ajouter un produit'; ?></h3>
+                </div>
+                <div class="modal-body" style="padding: 1.5rem;">
                 
                 <form method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="<?php echo $edit_product ? 'edit' : 'add'; ?>">
@@ -441,15 +454,16 @@ $page_title = 'Gestion des Produits';
                     </div>
                     
                     <div class="form-actions">
-                        <button type="submit" class="btn-primary"><?php echo $edit_product ? 'Enregistrer les modifications' : 'Ajouter le produit'; ?></button>
-                        <button type="button" id="hideFormBtn" class="btn-secondary">Annuler</button>
+                        <button type="submit" class="btn btn-primary"><?php echo $edit_product ? 'Enregistrer les modifications' : 'Ajouter le produit'; ?></button>
+                        <button type="button" id="hideFormBtn" class="btn btn-secondary">Annuler</button>
                     </div>
                 </form>
+                </div>
             </div>
 
             <!-- Products Table Panel -->
-            <div class="admin-dashboard">
-                <div class="page-header">
+            <div class="admin-card">
+                <div class="card-header">
                     <h3>Liste des produits (<?php echo count($products); ?>)</h3>
                     <!-- Search and Filters -->
                     <div class="filters-panel" style="padding:0; border:none; margin:0;">
@@ -479,8 +493,8 @@ $page_title = 'Gestion des Produits';
                 <?php if (empty($products)): ?>
                     <p class="empty-state-message">Aucun produit trouvé pour les filtres actuels.</p>
                 <?php else: ?>
-                    <div class="table-responsive">
-                        <table class="table">
+                    <div class="table-container">
+                        <table class="admin-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -528,18 +542,10 @@ $page_title = 'Gestion des Produits';
                         </table>
                     </div>
                 <?php endif; ?>
+                </div>
             </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>© <?php echo date('Y'); ?> Menalego - Interface d'administration</p>
-            </div>
-        </div>
-    </footer>
+        </main>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
